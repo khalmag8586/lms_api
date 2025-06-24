@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "apps.a2_about_us",
     "apps.a3_contact_us",
     "apps.a4_eduSys",
+    "apps.a5_stage",
 ]
 
 # email settings for production

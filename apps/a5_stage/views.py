@@ -5,32 +5,30 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.core.exceptions import ValidationError
 
-from rest_framework import status, generics
+from rest_framework import generics, status
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from apps.a4_eduSys.models import EduSystem
-from apps.a4_eduSys.serializers import (
-    EduSystemSerializer,
-    EduSysIsDeletedSerializer,
-    EduSysDialogSerializer,
+from apps.a5_stage.models import Stage
+from apps.a5_stage.serializers import (
+    StageSerializer,
+    StageDeletedSerializer,
+    StageDialogSerializer,
 )
-from apps.a4_eduSys.filters import EduSysFilter
+from apps.a5_stage.filters import StageFilter
 
 from lms_api.pagination import StandardResultsSetPagination
 from lms_api.custom_permissions import HasPermissionOrInGroupWithPermission
 from lms_api.utils import get_or_set_cache, cache_response, clear_cache_key
 
-import uuid
 
-
-class EduSysCreateView(generics.CreateAPIView):
-    serializer_class = EduSystemSerializer
+class StageCreateView(generics.CreateAPIView):
+    serializer_class = StageSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasPermissionOrInGroupWithPermission]
-    permission_codename = "a4_eduSys.add_edusystem"
+    permission_codename = "a5_stage.add_stage"
 
     def perform_create(self, serializer):
         serializer.save(
@@ -42,22 +40,19 @@ class EduSysCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        return Response(
-            {"detail": _("Educational System created successfully")},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response({"detail": _("Stage created successfully")})
 
 
 @method_decorator(cache_page(60 * 10), name="dispatch")  # 10 mins
-class EduSysListView(generics.ListAPIView):
-    queryset = EduSystem.objects.filter(is_deleted=False).order_by("-created_at")
-    serializer_class = EduSystemSerializer
+class StageListView(generics.ListAPIView):
+    queryset = Stage.objects.filter(is_deleted=False).order_by("-created_at")
+    serializer_class = StageSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasPermissionOrInGroupWithPermission]
-    permission_codename = "a4_eduSys.view_edusystem"
+    permission_codename = "a5_stage.view_stage"
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = EduSysFilter
+    filterset_class = StageFilter
     search_fields = [
         "name",
         "name_ar",
@@ -73,15 +68,15 @@ class EduSysListView(generics.ListAPIView):
 
 
 @method_decorator(cache_page(60 * 10), name="dispatch")  # 10 mins
-class EduSysDeletedListView(generics.ListAPIView):
-    queryset = EduSystem.objects.filter(is_deleted=True).order_by("-created_at")
-    serializer_class = EduSystemSerializer
+class StageDeletedListView(generics.ListAPIView):
+    queryset = Stage.objects.filter(is_deleted=True).order_by("-created_at")
+    serializer_class = StageSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasPermissionOrInGroupWithPermission]
-    permission_codename = "a4_eduSys.view_edusystem"
+    permission_codename = "a5_stage.view_stage"
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = EduSysFilter
+    filterset_class = StageFilter
     search_fields = [
         "name",
         "name_ar",
@@ -96,51 +91,49 @@ class EduSysDeletedListView(generics.ListAPIView):
     ]
 
 
-class EduSysRetrieveView(generics.RetrieveAPIView):
-    serializer_class = EduSystemSerializer
+class StageRetrieveView(generics.RetrieveAPIView):
+    serializer_class = StageSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasPermissionOrInGroupWithPermission]
-    permission_codename = "a4_eduSys.view_edusystem"
+    permission_codename = "a5_stage.view_stage"
     lookup_field = "id"
 
     def get_queryset(self):
-        return EduSystem.objects.filter(is_deleted=False)
+        return Stage.objects.filter(is_deleted=False)
 
     def get_object(self):
-        edusys_id = self.request.query_params.get("edusys_id")
-        cache_key = f"edusys_detail_{edusys_id}"
+        stage_id = self.request.query_params.get("stage_id")
+        cache_key = f"stage_detail_{stage_id}"
         return get_or_set_cache(
             cache_key,
-            lambda: get_object_or_404(self.get_queryset(), id=edusys_id),
+            lambda: get_object_or_404(self.get_queryset(), id=stage_id),
             timeout=300,
         )
 
 
-class EduSysDeleteTemporaryView(generics.UpdateAPIView):
-    serializer_class = EduSysIsDeletedSerializer
+class StageDeleteTemporaryView(generics.UpdateAPIView):
+    serializer_class = StageDeletedSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasPermissionOrInGroupWithPermission]
-    permission_codename = "a4_eduSys.delete_edusystem"
+    permission_codename = "a5_stage.delete_stage"
 
     def update(self, request, *args, **kwargs):
-        edusys_ids = request.data.get("edusys_id", [])
+        stage_ids = request.data.get("stage_id", [])
         partial = kwargs.pop("partial", False)
         is_deleted = request.data.get("is_deleted")
 
         if is_deleted == False:
             return Response(
-                {"detail": _("These educational systems are not deleted")},
+                {"detail": _("These stages are not deleted")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        for edusys_id in edusys_ids:
-            instance = get_object_or_404(EduSystem, id=edusys_id)
+        for stage_id in stage_ids:
+            instance = get_object_or_404(Stage, id=stage_id)
             if instance.is_deleted:
                 return Response(
                     {
                         "detail": _(
-                            "Edu sys with ID {} is already temp deleted".format(
-                                edusys_id
-                            )
+                            "Stage with ID {} is already temp deleted".format(stage_id)
                         )
                     },
                     status=status.HTTP_400_BAD_REQUEST,
@@ -150,42 +143,36 @@ class EduSysDeleteTemporaryView(generics.UpdateAPIView):
             )
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
-            clear_cache_key(f"edusys_detail_{edusys_id}")
+            clear_cache_key(f"stage_detail_{stage_id}")
 
         return Response(
-            {"detail": _("Educational Systems temp deleted successfully")},
+            {"detail": _("Stage temp deleted successfully")},
             status=status.HTTP_200_OK,
         )
 
 
-class EduSysRestoreView(generics.RetrieveUpdateAPIView):
+class StageRestoreView(generics.RetrieveUpdateAPIView):
 
-    serializer_class = EduSysIsDeletedSerializer
+    serializer_class = StageDeletedSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasPermissionOrInGroupWithPermission]
-    permission_codename = "a4_eduSys.delete_edusystem"
+    permission_codename = "a5_stage.delete_stage"
 
     def update(self, request, *args, **kwargs):
-        edusys_ids = request.data.get("edusys_id", [])
+        stage_ids = request.data.get("stage_id", [])
         partial = kwargs.pop("partial", False)
         is_deleted = request.data.get("is_deleted")
 
         if is_deleted == True:
             return Response(
-                {"detail": _("Educational system are already deleted")},
+                {"detail": _("Stages are already deleted")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        for edusys_id in edusys_ids:
-            instance = get_object_or_404(EduSystem, id=edusys_id)
+        for stage_id in stage_ids:
+            instance = get_object_or_404(Stage, id=stage_id)
             if instance.is_deleted == False:
                 return Response(
-                    {
-                        "detail": _(
-                            "Educational system with ID {} is not deleted".format(
-                                edusys_id
-                            )
-                        )
-                    },
+                    {"detail": _("Stages with ID {} is not deleted".format(stage_id))},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             serializer = self.get_serializer(
@@ -193,25 +180,25 @@ class EduSysRestoreView(generics.RetrieveUpdateAPIView):
             )
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
-            clear_cache_key(f"edusystem_detail_{edusys_id}")
+            clear_cache_key(f"stage_detail_{stage_id}")
 
         return Response(
-            {"detail": _("Educational System restored successfully")},
+            {"detail": _("Stages restored successfully")},
             status=status.HTTP_200_OK,
         )
 
 
-class EduSysUpdateView(generics.UpdateAPIView):
-    serializer_class = EduSystemSerializer
+class StageUpdateView(generics.UpdateAPIView):
+    serializer_class = StageSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasPermissionOrInGroupWithPermission]
-    permission_codename = "a4_eduSys.change_edusystem"
+    permission_codename = "a5_stage.change_stage"
     lookup_field = "id"
 
     def get_object(self):
-        edusys_id = self.request.query_params.get("edusys_id")
-        edusys = get_object_or_404(EduSystem, id=edusys_id)
-        return edusys
+        stage_id = self.request.query_params.get("stage_id")
+        stage = get_object_or_404(Stage, id=stage_id)
+        return stage
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
@@ -219,57 +206,57 @@ class EduSysUpdateView(generics.UpdateAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        clear_cache_key(f"edusystem_detail_{instance.id}")
+        clear_cache_key(f"stage_detail_{instance.id}")
 
         return Response(
-            {"detail": _("Educational Systems Updated successfully")},
+            {"detail": _("Stage Updated successfully")},
             status=status.HTTP_200_OK,
         )
 
 
-class EduSysDeleteView(generics.DestroyAPIView):
+class StageDeleteView(generics.DestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasPermissionOrInGroupWithPermission]
-    permission_codename = "a4_eduSys.delete_edusystem"
+    permission_codename = "a5_stage.delete_stage"
     import uuid
 
     def delete(self, request, format=None):
         # data = JSONParser().parse(request)
-        edusys_ids = request.data.get("edusys_id", [])
+        stage_ids = request.data.get("stage_id", [])
         import uuid
 
-        if not edusys_ids:
+        if not stage_ids:
             return Response(
-                {"detail": _("No educational system IDs provided for deletion")},
+                {"detail": _("No stage IDs provided for deletion")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Check if each UUID is valid
-        for uid in edusys_ids:
-            clear_cache_key(f"edusystem_detail_{uid}")
+        for uid in stage_ids:
+            clear_cache_key(f"stage_detail_{uid}")
 
             try:
                 uuid.UUID(uid.strip())
             except ValueError:
                 raise ValidationError(_("'{}' is not a valid UUID.".format(uid)))
 
-        edusyses = EduSystem.objects.filter(id__in=edusys_ids)
-        if not edusyses.exists():
+        stages = Stage.objects.filter(id__in=stage_ids)
+        if not stages.exists():
             return Response(
-                {"detail": _("No educational system found")},
+                {"detail": _("No stage found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        edusyses.delete()
+        stages.delete()
 
         return Response(
-            {"detail": _("Educational systems permanently deleted successfully")},
+            {"detail": _("Stages permanently deleted successfully")},
             status=status.HTTP_204_NO_CONTENT,
         )
 
 
-class EduSysDialogView(generics.ListAPIView):
-    serializer_class = EduSysDialogSerializer
+class StageDialogView(generics.ListAPIView):
+    serializer_class = StageDialogSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = EduSystem.objects.filter(is_deleted=False).order_by("-created_at")
+    queryset = Stage.objects.filter(is_deleted=False).order_by("-created_at")
