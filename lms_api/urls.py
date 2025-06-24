@@ -22,6 +22,7 @@ urlpatterns += i18n_patterns(
     path("api/permissions/", include("apps.a1_permissions_api.urls")),
     path("api/about_us/", include("apps.a2_about_us.urls")),
     path("api/contact_us/", include("apps.a3_contact_us.urls")),
+    path("api/edusystem/", include("apps.a4_eduSys.urls")),
 
 )
 

@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "apps.a1_permissions_api",
     "apps.a2_about_us",
     "apps.a3_contact_us",
+    "apps.a4_eduSys",
 ]
 
 # email settings for production

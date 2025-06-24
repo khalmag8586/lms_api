@@ -58,7 +58,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_staff",
             "is_active",
         ]
-        read_only_fields = ["id",'is_staff','is_active']
+        read_only_fields = ["id", "is_staff"]
         extra_kwargs = {
             "password": {
                 "write_only": True,
@@ -149,10 +149,11 @@ class UserSerializer(serializers.ModelSerializer):
     def get_updated_at(self, obj):
         return obj.updated_at.strftime("%Y-%m-%d")
 
+
 class UserMeSerializer(serializers.ModelSerializer):
     class Meta:
-        model=User
-        fields=[
+        model = User
+        fields = [
             "email",
             "name",
             "name_ar",
@@ -163,6 +164,8 @@ class UserMeSerializer(serializers.ModelSerializer):
             "home_address",
             "mobile_number",
         ]
+
+
 class UserDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -229,6 +232,7 @@ class UserDialogSerializer(serializers.ModelSerializer):
 class UserGenderChoiceSerializer(serializers.Serializer):
     value = serializers.CharField()
     display = serializers.CharField()
+
 
 class UserTypeChoiceSerializer(serializers.Serializer):
     value = serializers.CharField()
