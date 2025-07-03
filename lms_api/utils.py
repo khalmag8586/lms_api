@@ -19,6 +19,8 @@ from django.utils.timezone import now
 from django.core.cache import cache
 from functools import wraps
 from rest_framework.response import Response
+from rest_framework import status
+
 
 
 def get_or_set_cache(key, func, timeout=300):
@@ -100,7 +102,7 @@ class CheckFieldValueExistenceView(APIView):
                         "Field name and value are required in the query parameters."
                     )
                 },
-                status=400,
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         app_models = apps.get_models()
@@ -121,12 +123,12 @@ class CheckFieldValueExistenceView(APIView):
             message = _(
                 "The value '{}' already exists in the following models: {}"
             ).format(field_value, ", ".join(existing_models))
-            return JsonResponse({"is_exist": True, "detail": message}, status=200)
+            return JsonResponse({"is_exist": True, "detail": message}, status=status.HTTP_403_FORBIDDEN)
         else:
             message = _("The value '{}' does not exist in any model.").format(
                 field_value
             )
-            return JsonResponse({"is_exist": False, "detail": message}, status=200)
+            return JsonResponse({"is_exist": False, "detail": message}, status=status.HTTP_200_OK)
 
 
 @receiver(post_migrate)

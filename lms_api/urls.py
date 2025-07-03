@@ -6,17 +6,20 @@ from django.conf.urls.i18n import i18n_patterns
 from graphene_django.views import GraphQLView
 from django.views.decorators.csrf import csrf_exempt
 
+from lms_api.utils import CheckFieldValueExistenceView
 from lms_api.schema import schema
+
 urlpatterns = [
     path("i18n/", include("django.conf.urls.i18n")),
 ]
 urlpatterns += i18n_patterns(
     path("admin/", admin.site.urls),
-    # path('api/project_setup/',include('apps.project_setup.urls')),
     path("auth/", include("djoser.urls")),
     # path("auth/", include("djoser.urls.jwt")),
     # path("auth/", include("djoser.urls.authtoken")),
     path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
+    path("api/check_field_existence/", CheckFieldValueExistenceView.as_view(), name="check-field-existence"),
+
 
     path("api/users/", include("user.urls")),
     path("api/permissions/", include("apps.a1_permissions_api.urls")),
